@@ -10,7 +10,11 @@ defmodule FeedmeTest do
     {:ok, rss2} = File.read("test/fixtures/rss2/bigsample.xml")
     {:ok, atom} = File.read("test/fixtures/atom/sample1.xml")
 
-    {:ok, [rss2: rss2, atom: atom, wrong: wrong]}
+    {:ok, podcast_cre} = File.read("test/fixtures/cre.xml")
+    # {:ok, podcast_rbl} = File.read("test/fixtures/rbl.xml")
+    # {:ok, podcast_atp} = File.read("test/fixtures/atp.xml")
+
+    {:ok, [rss2: rss2, atom: atom, wrong: wrong, podcast_cre: podcast_cre]}
   end
 
   test "parse", %{rss2: rss2, atom: atom, wrong: wrong} do
@@ -28,6 +32,15 @@ defmodule FeedmeTest do
       assert called Feedme.Parsers.Atom.parse(atom_doc)
     end
 
-    {:error, "Feed format not valid"} = Feedme.parse(wrong)
+    assert {:error, "Feed format not valid"} = Feedme.parse(wrong)
   end
+
+  test "parse2", %{podcast_cre: podcast_cre} do
+    assert {:ok, feed} = Feedme.parse(podcast_cre)
+    assert "CRE: Technik, Kultur, Gesellschaft" = feed.meta.title
+    assert "Metaebene Personal Media - Tim Pritlove" = feed.meta.itunes.author
+    # IO.inspect cre_doc
+  end
+
+
 end
