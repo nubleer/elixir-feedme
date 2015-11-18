@@ -16,14 +16,14 @@ defmodule FeedmeTest do
   test "parse", %{rss2: rss2, atom: atom, wrong: wrong} do
     rss2_doc = XmlNode.from_string(rss2)
     with_mock Feedme.Parsers.RSS2, [valid?: fn(_) -> true end, parse: fn(_) -> :ok end] do
-      {:ok, feed} = Feedme.parse(rss2)
+      {:ok, _feed} = Feedme.parse(rss2)
       assert called Feedme.Parsers.RSS2.valid?(rss2_doc)
       assert called Feedme.Parsers.RSS2.parse(rss2_doc)
     end
 
     atom_doc = XmlNode.from_string(atom)
     with_mock Feedme.Parsers.Atom, [valid?: fn(_) -> true end, parse: fn(_) -> :ok end] do
-      {:ok, feed} = Feedme.parse(atom)
+      {:ok, _feed} = Feedme.parse(atom)
       assert called Feedme.Parsers.Atom.valid?(atom_doc)
       assert called Feedme.Parsers.Atom.parse(atom_doc)
     end
