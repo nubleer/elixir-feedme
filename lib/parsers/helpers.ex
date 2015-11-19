@@ -11,9 +11,10 @@ defmodule Feedme.Parsers.Helpers do
     end
   end
 
-  def parse_into_struct(document, struct), do: parse_into_struct(document, struct, [])
-  def parse_into_struct(nil, _, _), do: nil
-  def parse_into_struct(document, struct, ignore) do
+  def parse_into_struct(document, struct), do: parse_into_struct(document, struct, [], nil)
+  def parse_into_struct(document, struct, ignore), do: parse_into_struct(document, struct, ignore, nil)
+  def parse_into_struct(nil, _, _, _), do: nil
+  def parse_into_struct(document, struct, ignore, namespace) do
     # structs are basically maps
     [_ | string_fields] = Map.keys(struct)
                           |> Enum.reject(&Enum.member?(ignore, &1))
@@ -22,10 +23,18 @@ defmodule Feedme.Parsers.Helpers do
 
     # try to read all string typed fields from xml into struct
     Enum.reduce string_fields, struct, fn(key, struct) ->
-      value = get_text.(key) || Map.get struct, key
+      name = case namespace do
+        nil -> 
+          key
+        _ ->
+          String.to_atom(namespace <> ":" <> Atom.to_string(key))
+      end
+      value = get_text.(name) || Map.get struct, key
+      # IO.inspect value
       Map.put struct, key, value
     end
   end
+
 
   def parse_attributes_into_struct(document, struct), do: parse_attributes_into_struct(document, struct, [])
   def parse_attributes_into_struct(nil, _, _), do: nil

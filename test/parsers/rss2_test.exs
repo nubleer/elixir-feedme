@@ -7,16 +7,18 @@ defmodule Feedme.Test.Parsers.RSS2 do
   setup do
     sample1 = XmlNode.from_file("test/fixtures/rss2/sample1.xml")
     sample2 = XmlNode.from_file("test/fixtures/rss2/sample2.xml")
+    sample3 = XmlNode.from_file("test/fixtures/rss2/cre.xml")
     big_sample = XmlNode.from_file("test/fixtures/rss2/bigsample.xml")
 
-    {:ok, [sample1: sample1, sample2: sample2, big_sample: big_sample]}
+    {:ok, [sample1: sample1, sample2: sample2, sample3: sample3, big_sample: big_sample]}
   end
 
-  test "valid?", %{sample1: sample1, sample2: sample2} do
+  test "valid?", %{sample1: sample1, sample2: sample2, sample3: sample3} do
     wrong_doc = XmlNode.from_file("test/fixtures/wrong.xml")
 
     assert RSS2.valid?(sample1) == true
     assert RSS2.valid?(sample2) == true
+    assert RSS2.valid?(sample3) == true
     assert RSS2.valid?(wrong_doc) == false
   end
 
@@ -56,12 +58,20 @@ defmodule Feedme.Test.Parsers.RSS2 do
           until: :max
         },
         year: 2015
+      },
+      itunes: %Feedme.Itunes{
+        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
+        image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
       }
     }
 
     meta = RSS2.parse_meta(sample2)
     assert meta == %Feedme.MetaData{
-      link: "http://www.w3schools.com"
+      link: "http://www.w3schools.com",
+      itunes: %Feedme.Itunes{
+        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
+        image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+      }
     }
 
     meta = RSS2.parse_meta(big_sample)
@@ -80,7 +90,41 @@ defmodule Feedme.Test.Parsers.RSS2 do
           full_name: "UTC", offset_std: 0, offset_utc: 0, until: :max
         },
         year: 2015
+      },
+      itunes: %Feedme.Itunes{
+        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
+        image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
       }
+    }
+  end
+
+  test "parse podast feed with itunes and psc elements", %{sample3: sample3} do
+    meta = RSS2.parse_meta(sample3)
+    assert meta == %Feedme.MetaData{
+      author: nil, category: nil, cloud: nil, copyright: nil,
+      description: "Der Interview-Podcast mit Tim Pritlove", docs: nil, generator: "Podlove Podcast Publisher v2.3.3",
+      image: %Feedme.Image{description: nil, height: nil, link: "http://cre.fm",
+        title: "CRE: Technik, Kultur, Gesellschaft",
+        url: "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg",
+        width: nil
+      },
+      itunes: %Feedme.Itunes{
+        author: "Metaebene Personal Media - Tim Pritlove", block: "no", category: nil,
+       complete: nil, duration: nil, explicit: "no", image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil,
+       owner: nil, subtitle: "Der Interview-Podcast mit Tim Pritlove",
+       summary: "Intensive und ausführliche Gespräche über Themen aus Technik, Kultur und Gesellschaft, das ist CRE. Interessante Gesprächspartner stehen Rede und Antwort zu Fragen, die man normalerweise selten gestellt bekommt. CRE möchte  aufklären, weiterbilden und unterhalten."
+      },
+      language: "de-DE",
+      last_build_date: %Timex.DateTime{
+        calendar: :gregorian, day: 12, hour: 22, minute: 47, month: 11, ms: 0,
+        second: 30,
+        timezone: %Timex.TimezoneInfo{
+          abbreviation: "UTC", from: :min, full_name: "UTC", offset_std: 0, offset_utc: 0, until: :max
+        }, 
+        year: 2015
+      }, 
+      link: "http://cre.fm", managing_editor: nil, publication_date: nil, rating: nil,
+      skip_days: [], skip_hours: [], title: "CRE: Technik, Kultur, Gesellschaft", ttl: nil, web_master: nil
     }
   end
 
@@ -193,6 +237,10 @@ defmodule Feedme.Test.Parsers.RSS2 do
             until: :max
           },
           year: 2015
+        },
+        itunes: %Feedme.Itunes{
+          author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
+          image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
         }
       }
     }

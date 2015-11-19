@@ -37,7 +37,8 @@ defmodule Feedme do
               web_master: nil,
               skip_hours: [],
               skip_days: [],
-              image: nil
+              image: nil,
+              itunes: nil
   end
 
   defmodule Entry do
@@ -50,12 +51,37 @@ defmodule Feedme do
               enclosure: nil,
               guid: nil,
               publication_date: nil,
-              source: nil
+              source: nil,
+              itunes: nil,
+              chapters: []
   end
 
   defmodule Feed do
     defstruct meta: nil, 
               entries: nil
+  end
+
+  defmodule Itunes do
+    defstruct author: nil,
+              block: nil,
+              category: nil,
+              image: nil,
+              duration: nil,
+              explicit: nil,
+              isClosedCaptioned: nil,
+              order: nil,
+              complete: nil,
+              new_feed_url: nil,
+              owner: nil,              
+              subtitle: nil,
+              summary: nil
+  end
+
+  defmodule Chapter do
+    defstruct start: nil,
+              title: nil,
+              href: nil,
+              image: nil
   end
 
   def parse(xml) do
