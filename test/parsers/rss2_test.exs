@@ -98,7 +98,7 @@ defmodule Feedme.Test.Parsers.RSS2 do
     }
   end
 
-  test "parse podast feed with itunes and psc elements", %{sample3: sample3} do
+  test "parse podast feed meta including itunes namespaced elements", %{sample3: sample3} do
     meta = RSS2.parse_meta(sample3)
     assert meta == %Feedme.MetaData{
       author: nil, category: nil, cloud: nil, copyright: nil,
@@ -139,6 +139,10 @@ defmodule Feedme.Test.Parsers.RSS2 do
       description: "<p>I previously <a href=\"http://blog.drewolson.org/the-value-of-explicitness/\">wrote</a> about explicitness in Elixir. One of my favorite ways the language embraces explicitness is in its distinction between eager and lazy operations on collections. Any time you use the <code>Enum</code> module, you're performing an eager operation. Your collection will be transformed/mapped/enumerated immediately. When you use</p>",
       enclosure: nil,
       guid: "9b68a5a7-4ab0-420e-8105-0462357fa1f1",
+      itunes: %Feedme.Itunes{
+        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil, image: nil, isClosedCaptioned: nil,
+        new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+      },
       link: "http://blog.drewolson.org/elixir-streams/",
       enclosure: %Feedme.Enclosure{
         url: "http://www.tutorialspoint.com/mp3s/tutorial.mp3",
@@ -168,6 +172,49 @@ defmodule Feedme.Test.Parsers.RSS2 do
     }
   end
 
+  test "parse podast feed entries with itunes and podlove simple chapter (psc)", %{sample3: sample3} do
+    entries = RSS2.parse_entries(sample3)
+    assert entries
+    assert length(entries) == 60
+    entry = hd(entries)
+    assert entry == %Feedme.Entry{author: nil, categories: [], comments: nil,
+      description: "Der einst von Linus Torvalds geschaffene Betriebssystemkernel Linux ist eine freie Reimplementierung der UNIX Betriebssystemfamilie und hat sich in den letzten 20 Jahren sehr eigenständig entwickelt. Der Rest des Systems, das Userland, hat sich aber noch sehr stark an der klassischen Struktur von UNIX orientiert. Mit der Initiative systemd hat sich dies geändert und es entsteht eine sehr eigenständige Definition einer Linux-Systemebene, die sich zwischen Kernel und Anwendungen entfaltet und dort die Regeln der Installation und Systemadministration neu definiert.\n\nIch spreche mit dem Initiator des Projekts, Lennart Poettering, der schon vorher verschiedene Subsysteme zur Linux-Landschaft beigetragen hat über die Motivation und Struktur des Projekts, den aktuellen und zukünftigen Möglichkeiten der Software und welche kulturellen Auswirkungen der Einzug einer neuen Abstraktionsebene mit sich bringt.",
+      enclosure: %Feedme.Enclosure{length: "65230396", type: "audio/mp4",
+      url: "http://tracking.feedpress.it/link/13440/2008525/cre209-das-linux-system.m4a"}, guid: "podlove-2015-11-09t23:06:21+00:00-4501b131b3a9b1a",
+      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: nil, category: nil, complete: nil, duration: "02:50:21",
+      explicit: nil, image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil,
+      subtitle: "systemd leitet die neue Generation der Linux Systemarchitektur ein",
+      summary: "Der einst von Linus Torvalds geschaffene Betriebssystemkernel Linux ist eine freie Reimplementierung der UNIX Betriebssystemfamilie und hat sich in den letzten 20 Jahren sehr eigenständig entwickelt. Der Rest des Systems, das Userland, hat sich aber noch sehr stark an der klassischen Struktur von UNIX orientiert. Mit der Initiative systemd hat sich dies geändert und es entsteht eine sehr eigenständige Definition einer Linux-Systemebene, die sich zwischen Kernel und Anwendungen entfaltet und dort die Regeln der Installation und Systemadministration neu definiert.\n\nIch spreche mit dem Initiator des Projekts, Lennart Poettering, der schon vorher verschiedene Subsysteme zur Linux-Landschaft beigetragen hat über die Motivation und Struktur des Projekts, den aktuellen und zukünftigen Möglichkeiten der Software und welche kulturellen Auswirkungen der Einzug einer neuen Abstraktionsebene mit sich bringt."},
+      link: "http://cre.fm/cre209-das-linux-system",
+      publication_date: %Timex.DateTime{calendar: :gregorian, day: 10, hour: 1, minute: 15, month: 11, ms: 0, second: 50,
+      timezone: %Timex.TimezoneInfo{abbreviation: "UTC", from: :min, full_name: "UTC", offset_std: 0, offset_utc: 0, until: :max}, year: 2015},
+      source: nil, title: "CRE209 Das Linux System",
+      psc: [
+        %Feedme.Psc{href: nil, image: nil, start: "00:00:00.000", title: "Intro"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:01:42.024", title: "Begrüßung"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:03:03.037", title: "Hacken als Grundeinstellung"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:06:09.589", title: "Persönlicher Werdegang"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:17:16.981", title: "PulseAudio"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:30:21.917", title: "Avahi"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:38:24.502", title: "Elitismus und Geheimwissen"},
+        %Feedme.Psc{href: nil, image: nil, start: "00:51:38.717", title: "systemd : Beweggründe zur Entwicklung"},
+        %Feedme.Psc{href: nil, image: nil, start: "01:25:27.304", title: "systemd: Vorbilder und alte Zöpfe"},
+        %Feedme.Psc{href: nil, image: nil, start: "01:48:18.600", title: "systemd Entwickler"},
+        %Feedme.Psc{href: nil, image: nil, start: "01:50:23.048", title: "UEFI Booting und Secure Boot"},
+        %Feedme.Psc{href: nil, image: nil, start: "02:04:54.909", title: "Linux System Startup and Shutdown"},
+        %Feedme.Psc{href: nil, image: nil, start: "02:16:16.477", title: "Der systemd Graph"},
+        %Feedme.Psc{href: nil, image: nil, start: "02:29:54.685", title: "Network Setup mit systemd"},
+        %Feedme.Psc{href: nil, image: nil, start: "02:42:10.547", title: "Ausblick und Fazit"}
+      ]
+    }
+    assert entry.psc
+    psc = entry.psc
+    assert is_list(psc)
+    assert length(psc) == 15
+
+  end
+
+
   test "parse_entries", %{sample1: sample1, sample2: sample2} do
     [item1, item2] = RSS2.parse_entries(sample1)
     
@@ -195,14 +242,19 @@ defmodule Feedme.Test.Parsers.RSS2 do
 
     assert feed == %Feedme.Feed{
       entries: [
-        %Feedme.Entry{
-          description: "New RSS tutorial on W3Schools",
-          link: "http://www.w3schools.com/webservices", 
-          title: "RSS Tutorial"},
-        %Feedme.Entry{
-          description: "New XML tutorial on W3Schools",
-          link: "http://www.w3schools.com/xml", 
-          title: "XML Tutorial"}],
+        %Feedme.Entry{author: nil, categories: [], psc: [], comments: nil, description: "New RSS tutorial on W3Schools",
+          enclosure: nil, guid: nil, itunes: %Feedme.Itunes{
+            author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil, image: nil, isClosedCaptioned: nil,
+            new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+          }, link: "http://www.w3schools.com/webservices", publication_date: nil, source: nil, title: "RSS Tutorial"
+        },
+        %Feedme.Entry{author: nil, categories: [], psc: [], comments: nil, description: "New XML tutorial on W3Schools", 
+          enclosure: nil, guid: nil, itunes: %Feedme.Itunes{
+            author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil, image: nil, isClosedCaptioned: nil,
+            new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+          }, link: "http://www.w3schools.com/xml", publication_date: nil, source: nil, title: "XML Tutorial"
+        }
+      ],
       meta: %Feedme.MetaData{
         description: "Free web building tutorials",
         link: "http://www.w3schools.com", 

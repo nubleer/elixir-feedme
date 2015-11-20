@@ -6,6 +6,7 @@ defmodule Feedme.Parsers.RSS2 do
   alias Feedme.Entry
   alias Feedme.MetaData
   alias Feedme.Itunes
+  alias Feedme.Psc
   alias Feedme.Image
   alias Feedme.Enclosure
 
@@ -65,7 +66,7 @@ defmodule Feedme.Parsers.RSS2 do
   end
 
   def parse_entry(node) do
-    ignore_fields = [:categories, :enclosure, :publication_date]
+    ignore_fields = [:categories, :enclosure, :publication_date, :itunes]
     entry = parse_into_struct(node, %Entry{}, ignore_fields)
 
     categories = XmlNode.children_map(node, "category", &XmlNode.text/1)
@@ -76,10 +77,24 @@ defmodule Feedme.Parsers.RSS2 do
     publication_date = XmlNode.first_try(node, ["pubDate", "publicationDate"])
                        |> parse_datetime
 
+    itunes = parse_into_struct(node, %Itunes{}, [], "itunes")
+    psc = parse_psc_entries(node)
+
     %{entry |
       categories: categories,
       enclosure: enclosure,
-      publication_date: publication_date
+      publication_date: publication_date,
+      itunes: itunes,
+      psc: psc
     }
   end
+
+  def parse_psc_entries(node) do
+    XmlNode.children_map(node, "psc:chapters/psc:chapter", &parse_psc_entry/1)
+  end
+
+  def parse_psc_entry(node) do
+    parse_attributes_into_struct(node, %Psc{})
+  end
+
 end

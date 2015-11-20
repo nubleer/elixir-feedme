@@ -53,7 +53,7 @@ defmodule Feedme do
               publication_date: nil,
               source: nil,
               itunes: nil,
-              chapters: []
+              psc: []
   end
 
   defmodule Feed do
@@ -77,7 +77,7 @@ defmodule Feedme do
               summary: nil
   end
 
-  defmodule Chapter do
+  defmodule Psc do
     defstruct start: nil,
               title: nil,
               href: nil,
