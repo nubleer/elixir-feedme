@@ -38,7 +38,8 @@ defmodule Feedme do
               skip_hours: [],
               skip_days: [],
               image: nil,
-              itunes: nil
+              itunes: nil,
+              atom_links: []
   end
 
   defmodule Entry do
@@ -53,7 +54,8 @@ defmodule Feedme do
               publication_date: nil,
               source: nil,
               itunes: nil,
-              psc: []
+              psc: [],
+              atom_links: []
   end
 
   defmodule Feed do
@@ -82,6 +84,13 @@ defmodule Feedme do
               title: nil,
               href: nil,
               image: nil
+  end
+
+  defmodule AtomLink do
+    defstruct rel: nil,
+              type: nil,
+              href: nil,
+              title: nil
   end
 
   def parse(xml) do

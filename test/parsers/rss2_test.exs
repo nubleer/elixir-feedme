@@ -94,8 +94,22 @@ defmodule Feedme.Test.Parsers.RSS2 do
       itunes: %Feedme.Itunes{
         author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
         image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
-      }
+      },
+      atom_links: [%Feedme.AtomLink{href: "http://blog.drewolson.org/rss/", rel: "self", title: nil, type: "application/rss+xml"}]
     }
+  end
+
+  test "parse_meta with atom links", %{sample3: sample3} do
+    meta = RSS2.parse_meta(sample3)
+    assert length(meta.atom_links) == 9
+    [link | rest ] = meta.atom_links
+    assert link.title =="CRE: Technik, Kultur, Gesellschaft (MPEG-4 AAC Audio)"
+    assert link.rel == "self"
+    assert link.href == "http://feeds.metaebene.me/cre/m4a"
+    [link | _ ] = rest
+    assert link.title =="CRE: Technik, Kultur, Gesellschaft (MP3 Audio)"
+    assert link.rel == "alternate"
+    assert link.href == "http://cre.fm/feed/mp3"
   end
 
   test "parse podast feed meta including itunes namespaced elements", %{sample3: sample3} do
@@ -124,7 +138,21 @@ defmodule Feedme.Test.Parsers.RSS2 do
         year: 2015
       }, 
       link: "http://cre.fm", managing_editor: nil, publication_date: nil, rating: nil,
-      skip_days: [], skip_hours: [], title: "CRE: Technik, Kultur, Gesellschaft", ttl: nil, web_master: nil
+      skip_days: [], skip_hours: [], title: "CRE: Technik, Kultur, Gesellschaft", ttl: nil, web_master: nil,
+      atom_links: [%Feedme.AtomLink{href: "http://feeds.metaebene.me/cre/m4a", rel: "self",
+        title: "CRE: Technik, Kultur, Gesellschaft (MPEG-4 AAC Audio)", type: "application/rss+xml"},
+        %Feedme.AtomLink{href: "http://cre.fm/feed/mp3", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (MP3 Audio)",
+        type: "application/rss+xml"},
+        %Feedme.AtomLink{href: "http://cre.fm/feed/oga", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (Ogg Vorbis Audio)",
+        type: "application/rss+xml"},
+        %Feedme.AtomLink{href: "http://cre.fm/feed/opus", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (Ogg Opus Audio)",
+        type: "application/rss+xml"}, %Feedme.AtomLink{href: "http://cre.fm/feed/m4a?paged=2", rel: "next", title: nil, type: nil},
+        %Feedme.AtomLink{href: "http://cre.fm/feed/m4a", rel: "first", title: nil, type: nil},
+        %Feedme.AtomLink{href: "http://cre.fm/feed/m4a?paged=4", rel: "last", title: nil, type: nil},
+        %Feedme.AtomLink{href: "http://metaebene.superfeedr.com", rel: "hub", title: nil, type: nil},
+        %Feedme.AtomLink{href: "https://flattr.com/submit/auto?user_id=timpritlove&language=de_DE&url=http%3A%2F%2Fcre.fm&title=CRE%3A+Technik%2C+Kultur%2C+Gesellschaft&description=Der+Interview-Podcast+mit+Tim+Pritlove",
+        rel: "payment", title: "Flattr this!", type: "text/html"}
+      ]
     }
   end
 
@@ -205,13 +233,34 @@ defmodule Feedme.Test.Parsers.RSS2 do
         %Feedme.Psc{href: nil, image: nil, start: "02:16:16.477", title: "Der systemd Graph"},
         %Feedme.Psc{href: nil, image: nil, start: "02:29:54.685", title: "Network Setup mit systemd"},
         %Feedme.Psc{href: nil, image: nil, start: "02:42:10.547", title: "Ausblick und Fazit"}
+      ],
+      atom_links: [%Feedme.AtomLink{href: "http://cre.fm/cre209-das-linux-system#", rel: "http://podlove.org/deep-link", title: nil,
+        type: nil},
+        %Feedme.AtomLink{href: "https://flattr.com/submit/auto?user_id=timpritlove&language=de_DE&url=http%3A%2F%2Fcre.fm%2Fcre209-das-linux-system&title=CRE209+Das+Linux+System&description=Der+einst+von+Linus+Torvalds+geschaffene+Betriebssystemkernel+Linux+ist+eine+freie+Reimplementierung+der+UNIX+Betriebssystemfamilie+und+hat+sich+in+den+letzten+20+Jahren+sehr+eigenst%C3%A4ndig+entwickelt.+Der+Rest+des+Systems%2C+das+Userland%2C+hat+sich+aber+noch+sehr+stark+an+der+klassischen+Struktur+von+UNIX+orientiert.+Mit+der+Initiative+systemd+hat+sich+dies+ge%C3%A4ndert+und+es+entsteht+eine+sehr+eigenst%C3%A4ndige+Definition+einer+Linux-Systemebene%2C+die+sich+zwischen+Kernel+und+Anwendungen+entfaltet+und+dort+die+Regeln+der+Installation+und+Systemadministration+neu+definiert.%0D%0A%0D%0AIch+spreche+mit+dem+Initiator+des+Projekts%2C+Lennart+Poettering%2C+der+schon+vorher+verschiedene+Subsysteme+zur+Linux-Landschaft+beigetragen+hat+%C3%BCber+die+Motivation+und+Struktur+des+Projekts%2C+den+aktuellen+und+zuk%C3%BCnftigen+M%C3%B6glichkeiten+der+Software+und+welche+kulturellen+Auswirkungen+der+Einzug+einer+neuen+Abstraktionsebene+mit+sich+bringt.",
+        rel: "payment", title: "Flattr this!", type: "text/html"}
       ]
     }
     assert entry.psc
     psc = entry.psc
     assert is_list(psc)
     assert length(psc) == 15
+  end
 
+  test "parse_entry with atom links", %{sample3: sample3} do
+    entries = RSS2.parse_entries(sample3)
+    assert entries
+    [entry | _ ] = entries
+    assert length(entry.atom_links) == 2
+    [link | links] = entry.atom_links
+    assert link.title == nil
+    assert link.rel == "http://podlove.org/deep-link"
+    assert link.href == "http://cre.fm/cre209-das-linux-system#"
+    assert link.type == nil
+    [link | _ ] = links
+    assert link.title =="Flattr this!"
+    assert link.rel == "payment"
+    assert link.href == "https://flattr.com/submit/auto?user_id=timpritlove&language=de_DE&url=http%3A%2F%2Fcre.fm%2Fcre209-das-linux-system&title=CRE209+Das+Linux+System&description=Der+einst+von+Linus+Torvalds+geschaffene+Betriebssystemkernel+Linux+ist+eine+freie+Reimplementierung+der+UNIX+Betriebssystemfamilie+und+hat+sich+in+den+letzten+20+Jahren+sehr+eigenst%C3%A4ndig+entwickelt.+Der+Rest+des+Systems%2C+das+Userland%2C+hat+sich+aber+noch+sehr+stark+an+der+klassischen+Struktur+von+UNIX+orientiert.+Mit+der+Initiative+systemd+hat+sich+dies+ge%C3%A4ndert+und+es+entsteht+eine+sehr+eigenst%C3%A4ndige+Definition+einer+Linux-Systemebene%2C+die+sich+zwischen+Kernel+und+Anwendungen+entfaltet+und+dort+die+Regeln+der+Installation+und+Systemadministration+neu+definiert.%0D%0A%0D%0AIch+spreche+mit+dem+Initiator+des+Projekts%2C+Lennart+Poettering%2C+der+schon+vorher+verschiedene+Subsysteme+zur+Linux-Landschaft+beigetragen+hat+%C3%BCber+die+Motivation+und+Struktur+des+Projekts%2C+den+aktuellen+und+zuk%C3%BCnftigen+M%C3%B6glichkeiten+der+Software+und+welche+kulturellen+Auswirkungen+der+Einzug+einer+neuen+Abstraktionsebene+mit+sich+bringt."
+    assert link.type == "text/html"
   end
 
 
