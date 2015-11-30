@@ -40,7 +40,7 @@ defmodule Feedme.Mixfile do
     [
       {:mix_test_watch, "~> 0.2", only: :test},
       {:mock, "~> 0.1.1", only: :test},
-      {:timex, "~> 0.19.2"}
+      {:timex, "~> 1.0.0-rc3"}
     ]
   end
 end
