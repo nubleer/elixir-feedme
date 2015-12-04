@@ -8,17 +8,19 @@ defmodule Feedme.Test.Parsers.RSS2 do
     sample1 = XmlNode.from_file("test/fixtures/rss2/sample1.xml")
     sample2 = XmlNode.from_file("test/fixtures/rss2/sample2.xml")
     sample3 = XmlNode.from_file("test/fixtures/rss2/cre.xml")
+    sample4 = XmlNode.from_file("test/fixtures/rss2/wpt.xml")
     big_sample = XmlNode.from_file("test/fixtures/rss2/bigsample.xml")
 
-    {:ok, [sample1: sample1, sample2: sample2, sample3: sample3, big_sample: big_sample]}
+    {:ok, [sample1: sample1, sample2: sample2, sample3: sample3, sample4: sample4, big_sample: big_sample]}
   end
 
-  test "valid?", %{sample1: sample1, sample2: sample2, sample3: sample3} do
+  test "valid?", %{sample1: sample1, sample2: sample2, sample3: sample3, sample4: sample4} do
     wrong_doc = XmlNode.from_file("test/fixtures/wrong.xml")
 
     assert RSS2.valid?(sample1) == true
     assert RSS2.valid?(sample2) == true
     assert RSS2.valid?(sample3) == true
+    assert RSS2.valid?(sample4) == true
     assert RSS2.valid?(wrong_doc) == false
   end
 
@@ -115,44 +117,33 @@ defmodule Feedme.Test.Parsers.RSS2 do
   test "parse podast feed meta including itunes namespaced elements", %{sample3: sample3} do
     meta = RSS2.parse_meta(sample3)
     assert meta == %Feedme.MetaData{
-      author: nil, category: nil, cloud: nil, copyright: nil,
+      atom_links: [
+         %Feedme.AtomLink{href: "http://feeds.metaebene.me/cre/m4a", rel: "self",
+          title: "CRE: Technik, Kultur, Gesellschaft (MPEG-4 AAC Audio)", type: "application/rss+xml"},
+         %Feedme.AtomLink{href: "http://cre.fm/feed/mp3", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (MP3 Audio)",
+          type: "application/rss+xml"},
+         %Feedme.AtomLink{href: "http://cre.fm/feed/oga", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (Ogg Vorbis Audio)",
+          type: "application/rss+xml"},
+         %Feedme.AtomLink{href: "http://cre.fm/feed/opus", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (Ogg Opus Audio)",
+          type: "application/rss+xml"}, %Feedme.AtomLink{href: "http://cre.fm/feed/m4a?paged=2", rel: "next", title: nil, type: nil},
+         %Feedme.AtomLink{href: "http://cre.fm/feed/m4a", rel: "first", title: nil, type: nil},
+         %Feedme.AtomLink{href: "http://cre.fm/feed/m4a?paged=4", rel: "last", title: nil, type: nil},
+         %Feedme.AtomLink{href: "http://metaebene.superfeedr.com", rel: "hub", title: nil, type: nil},
+         %Feedme.AtomLink{href: "https://flattr.com/submit/auto?user_id=timpritlove&language=de_DE&url=http%3A%2F%2Fcre.fm&title=CRE%3A+Technik%2C+Kultur%2C+Gesellschaft&description=Der+Interview-Podcast+mit+Tim+Pritlove",
+          rel: "payment", title: "Flattr this!", type: "text/html"}
+      ], author: nil, category: nil, cloud: nil, copyright: nil,
       description: "Der Interview-Podcast mit Tim Pritlove", docs: nil, generator: "Podlove Podcast Publisher v2.3.3",
-      image: %Feedme.Image{description: nil, height: nil, link: "http://cre.fm",
-        title: "CRE: Technik, Kultur, Gesellschaft",
-        url: "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg",
-        width: nil
-      },
-      itunes: %Feedme.Itunes{
-        author: "Metaebene Personal Media - Tim Pritlove", block: "no", category: nil,
-       complete: nil, duration: nil, explicit: "no", image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil,
-       owner: nil, subtitle: "Der Interview-Podcast mit Tim Pritlove",
-       summary: "Intensive und ausführliche Gespräche über Themen aus Technik, Kultur und Gesellschaft, das ist CRE. Interessante Gesprächspartner stehen Rede und Antwort zu Fragen, die man normalerweise selten gestellt bekommt. CRE möchte  aufklären, weiterbilden und unterhalten."
-      },
+      image: %Feedme.Image{description: nil, height: nil, link: "http://cre.fm", title: "CRE: Technik, Kultur, Gesellschaft",
+       url: "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg", width: nil},
+      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: "no", category: nil, complete: nil, duration: nil,
+       explicit: "no", image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: "\n      \n      \n    ",
+       subtitle: "Der Interview-Podcast mit Tim Pritlove",
+       summary: "Intensive und ausführliche Gespräche über Themen aus Technik, Kultur und Gesellschaft, das ist CRE. Interessante Gesprächspartner stehen Rede und Antwort zu Fragen, die man normalerweise selten gestellt bekommt. CRE möchte  aufklären, weiterbilden und unterhalten."},
       language: "de-DE",
-      last_build_date: %Timex.DateTime{
-        calendar: :gregorian, day: 12, hour: 22, minute: 47, month: 11, ms: 0,
-        second: 30,
-        timezone: %Timex.TimezoneInfo{
-          abbreviation: "UTC", from: :min, full_name: "UTC", offset_std: 0, offset_utc: 0, until: :max
-        }, 
-        year: 2015
-      }, 
-      link: "http://cre.fm", managing_editor: nil, publication_date: nil, rating: nil,
-      skip_days: [], skip_hours: [], title: "CRE: Technik, Kultur, Gesellschaft", ttl: nil, web_master: nil,
-      atom_links: [%Feedme.AtomLink{href: "http://feeds.metaebene.me/cre/m4a", rel: "self",
-        title: "CRE: Technik, Kultur, Gesellschaft (MPEG-4 AAC Audio)", type: "application/rss+xml"},
-        %Feedme.AtomLink{href: "http://cre.fm/feed/mp3", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (MP3 Audio)",
-        type: "application/rss+xml"},
-        %Feedme.AtomLink{href: "http://cre.fm/feed/oga", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (Ogg Vorbis Audio)",
-        type: "application/rss+xml"},
-        %Feedme.AtomLink{href: "http://cre.fm/feed/opus", rel: "alternate", title: "CRE: Technik, Kultur, Gesellschaft (Ogg Opus Audio)",
-        type: "application/rss+xml"}, %Feedme.AtomLink{href: "http://cre.fm/feed/m4a?paged=2", rel: "next", title: nil, type: nil},
-        %Feedme.AtomLink{href: "http://cre.fm/feed/m4a", rel: "first", title: nil, type: nil},
-        %Feedme.AtomLink{href: "http://cre.fm/feed/m4a?paged=4", rel: "last", title: nil, type: nil},
-        %Feedme.AtomLink{href: "http://metaebene.superfeedr.com", rel: "hub", title: nil, type: nil},
-        %Feedme.AtomLink{href: "https://flattr.com/submit/auto?user_id=timpritlove&language=de_DE&url=http%3A%2F%2Fcre.fm&title=CRE%3A+Technik%2C+Kultur%2C+Gesellschaft&description=Der+Interview-Podcast+mit+Tim+Pritlove",
-        rel: "payment", title: "Flattr this!", type: "text/html"}
-      ]
+      last_build_date: %Timex.DateTime{calendar: :gregorian, day: 12, hour: 22, minute: 47, month: 11, ms: 0, second: 30,
+       timezone: %Timex.TimezoneInfo{abbreviation: "UTC", from: :min, full_name: "UTC", offset_std: 0, offset_utc: 0, until: :max}, year: 2015},
+      link: "http://cre.fm", managing_editor: nil, publication_date: nil, rating: nil, skip_days: [], skip_hours: [],
+      title: "CRE: Technik, Kultur, Gesellschaft", ttl: nil, web_master: nil
     }
   end
 
@@ -286,7 +277,16 @@ defmodule Feedme.Test.Parsers.RSS2 do
     assert item2.description == nil
   end
 
-  test "parse", %{sample1: sample1} do
+  test "parse wpt", %{sample4: sample4} do
+    feed = RSS2.parse(sample4)
+    assert feed.meta.title == "WordPress Weekly"
+    entries = RSS2.parse_entries(sample4)
+    assert 12 == length(entries)
+    assert Enum.at(entries, 0).guid == "http://wptavern.com?p=49295&preview_id=49295"
+  end
+
+
+  test "parse sample1", %{sample1: sample1} do
     feed = RSS2.parse(sample1)
 
     assert feed == %Feedme.Feed{

@@ -60,7 +60,12 @@ defmodule Feedme.XmlNode do
   defp extract_attr(_), do: nil
 
   def text(node), do: node |> xpath('./text()') |> extract_text
-  defp extract_text([xmlText(value: value)]), do: List.to_string(value)
+  defp extract_text(l) when is_list(l) do
+    case Enum.map(l, fn(xmlText(value: value)) -> value end) |> Enum.join do
+      "" -> nil
+      value -> value
+    end
+  end
   defp extract_text(_x), do: nil
 
 

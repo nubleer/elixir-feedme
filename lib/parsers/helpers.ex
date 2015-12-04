@@ -19,7 +19,9 @@ defmodule Feedme.Parsers.Helpers do
     [_ | string_fields] = Map.keys(struct)
                           |> Enum.reject(&Enum.member?(ignore, &1))
 
-    get_text = fn(name) -> XmlNode.text_for_node(document, name) end
+    get_text = fn(name) ->
+      XmlNode.text_for_node(document, name) 
+    end
 
     # try to read all string typed fields from xml into struct
     Enum.reduce string_fields, struct, fn(key, struct) ->
