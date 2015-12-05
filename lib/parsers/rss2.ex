@@ -11,6 +11,7 @@ defmodule Feedme.Parsers.RSS2 do
   alias Feedme.Image
   alias Feedme.Enclosure
 
+
   def valid?(document) do
     has_version = document
                   |> XmlNode.first("/rss")
