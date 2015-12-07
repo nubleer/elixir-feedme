@@ -71,5 +71,8 @@ Feedme expose only one function named ```parse/1```. Parse function detects the 
 
 ## ToDo
 
-- [ ] Rss+Atom parser
-- [ ] FeedBurner support
+- [X] Use Expat (fast_xml) for parsing
+- [ ] Simplify Parser Structure, remove old RSS parser, refactor some names
+- [ ] Add content:encoded element for items
+- [ ] Add support for paged feeds
+- [ ] Add support for streaming

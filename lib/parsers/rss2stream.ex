@@ -214,6 +214,27 @@ defmodule Feedme.Parsers.RSS2Stream do
     end
   end
 
+  defp atom_link(content, attributes) do
+    %AtomLink{
+      rel: Access.get(attributes, "rel", nil),
+      type: Access.get(attributes, "type", nil),
+      href: Access.get(attributes, "href", nil),
+      title: Access.get(attributes, "title", nil),
+    }
+  end
+
+  defp parse_item(content, _attr) do
+    Enum.reduce content, %Entry{itunes: %Itunes{}}, fn(el, entry) ->
+      case el do
+        {:xmlel, "title", _attr, content} -> %Entry{entry | title: pcdata(content)}
+        {:xmlel, "link", _attr, content} -> %Entry{entry | link: pcdata(content)}
+        {:xmlel, "description", _attr, content} -> %Entry{entry | description: pcdata(content)}
+        {:xmlel, "author", _attr, content} -> %Entry{entry | author: pcdata(content)}
+        _ -> entry
+      end
+    end
+  end
+
   defp pe({:xmlel, "channel", attribs, content}) do
     Enum.reduce content, %Feed{ meta: %MetaData{itunes: %Itunes{}}}, fn(el, feed) ->
       case el do
@@ -240,10 +261,14 @@ defmodule Feedme.Parsers.RSS2Stream do
         {:xmlel, "skipDays", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | skip_days: (content |> map_element("day") |> map_to_integer ) } }
 
         {:xmlel, "image", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | image: (content |> image_element) } }
-        {:xmlel, "atom:link", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | image: (content |> image_element) } }
         
         {:xmlel, name, attr, content} when binary_part(name, 0, 7) == "itunes:" ->
           %Feed{feed | meta: %MetaData{ feed.meta | itunes: (content |> itunes_element(name, attr, feed.meta.itunes)) } }
+
+        {:xmlel, "atom:link", attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | atom_links: [ atom_link(content, attr) | feed.meta.atom_links] } }
+
+        {:xmlel, "item", attr, content} -> %Feed{feed | entries: [ parse_item(content, attr) | feed.entries] }
+
 
         _ -> feed
       end
