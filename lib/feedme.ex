@@ -60,7 +60,7 @@ defmodule Feedme do
 
   defmodule Feed do
     defstruct meta: nil, 
-              entries: nil
+              entries: []
   end
 
   defmodule Itunes do

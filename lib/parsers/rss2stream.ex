@@ -103,8 +103,8 @@ defmodule Feedme.Parsers.RSS2Stream do
     case state.error do
       true -> {:noreply, state}
       false ->
-        IO.inspect pe(state.parser_state, e)
-        # state = %State{ state | parser_state: parse_elements(state.parser_state, e) }
+        parsed = pe(e)
+        state = %State{ state | parser_state: %ParserState{feed: parsed} }
         {:noreply, state}
     end
   end
@@ -161,135 +161,93 @@ defmodule Feedme.Parsers.RSS2Stream do
     |> Enum.map(fn(e) -> String.to_integer(e) end)
   end
 
-  defp pe(parser_state, {:xmlel, "channel", attribs, content}) do
-    meta = Enum.reduce content, %MetaData{}, fn(el, meta) ->
+  defp image_element(content) do
+    Enum.reduce content, %Image{}, fn(el, image) ->
       case el do
-        {:xmlel, "title", _attr, content} -> %MetaData{meta | title: pcdata(content)}
-        {:xmlel, "link", _attr, content} -> %MetaData{meta | link: pcdata(content)}
-        {:xmlel, "description", _attr, content} -> %MetaData{meta | description: pcdata(content)}
-        {:xmlel, "author", _attr, content} -> %MetaData{meta | author: pcdata(content)}
-        {:xmlel, "language", _attr, content} -> %MetaData{meta | language: pcdata(content)}
-        {:xmlel, "copyright", _attr, content} -> %MetaData{meta | copyright: pcdata(content)}
-
-        {:xmlel, "pubDate", _attr, content} -> %MetaData{meta | publication_date: pcdata(content) |> parse_datetime }
-        {:xmlel, "lastBuildDate", _attr, content} -> %MetaData{meta | last_build_date: pcdata(content) |> parse_datetime }
-
-        {:xmlel, "skipHours", _attr, content} -> %MetaData{meta | skip_hours: (content |> map_element("hour") |> map_to_integer ) }
-        {:xmlel, "skipDays", _attr, content} -> %MetaData{meta | skip_days: (content |> map_element("day") |> map_to_integer ) }
-
-        _ -> meta
+        {:xmlel, "title", _attr, content} -> %Image{image | title: pcdata(content)}
+        {:xmlel, "url", _attr, content} -> %Image{image | url: pcdata(content)}
+        {:xmlel, "link", _attr, content} -> %Image{image | link: pcdata(content)}
+        {:xmlel, "width", _attr, content} -> %Image{image | width: (pcdata(content) |> String.to_integer)}
+        {:xmlel, "height", _attr, content} -> %Image{image | height: (pcdata(content) |> String.to_integer)}
+        _ -> image
       end
     end
-    meta
   end
 
-
-
-
-  # parse events
-
-  defp parse_chardata(acc, []) do
-    {acc, []}
-  end
-  defp parse_chardata(acc, {:xmlcdata, cdata}) do
-    acc = acc <> cdata
-    {acc, []}
-  end
-  defp parse_chardata(acc, [{:xmlcdata, cdata} | rest]) do
-    acc = acc <> cdata
-    parse_chardata(acc, rest)
-  end
-  defp parse_chardata(acc, rest) do
-    {acc, rest}
-  end
-
-  defp parse_elements(parser_state, elements) when is_list(elements) do
-    # IO.inspect "got a list"
-    Enum.reduce elements, parser_state, fn(el, parser_state) -> 
-      parse_elements(parser_state, el) 
+  defp extract_attribute(content, attr, attribute_name) do
+    Enum.reduce attr, nil, fn({k, v}, acc) ->
+      case k do
+        attribute_name -> v
+        _ -> acc
+      end
     end
   end
-  defp parse_elements(parser_state, {:xmlel, name, attribs, rest}) do
-    #  IO.inspect "got el #{name}"
-    # if parser_state.feed.meta do
-    #   IO.inspect "--> #{parser_state.feed.meta.title}" 
-    # end
-    parser_state = case parser_state.current_element do
-      nil ->
-        case name do
-          "channel" -> 
-            %ParserState{ parser_state | 
-              current_element: :channel, 
-              feed: %Feed{ meta: %MetaData{} }
-            }
-          _ -> parser_state
-        end
-      :channel ->
-        case name do
-          "item" ->
-            %ParserState{ parser_state | 
-              current_element: :item, 
-              feed: %Feed{ parser_state.feed | 
-                entries: [%Entry{} | parser_state.feed.entries]
-              }
-            }
-          "title" -> 
-            # IO.inspect name
-            {chardata, rest} = parse_chardata("", rest)
-            %ParserState{ parser_state | 
-              feed: %Feed{ parser_state.feed |
-                meta: %MetaData{ parser_state.feed.meta | 
-                  title: chardata
-                } 
-              } 
-            }
-          _ ->
-            parser_state
-        end
-      :item ->
-        case name do
-          "item" ->
-            %ParserState{ parser_state | 
-              current_element: :item, 
-              feed: %Feed{ parser_state.feed | 
-                entries: [%Entry{} | parser_state.feed.entries]
-              }
-            }
-          # "title" -> 
-          #   # IO.inspect name
-          #   {chardata, rest} = parse_chardata("", rest)
-          #   %ParserState{ parser_state | 
-          #     feed: %Feed{ parser_state.feed |
-          #       meta: %MetaData{ parser_state.feed.meta | 
-          #         title: chardata
-          #       } 
-          #     } 
-          #   }
-          _ ->
-            parser_state
-        end
-      _ -> parser_state
-    end
 
-    # if name == "title" do
-    #   IO.inspect "got el #{name} #{inspect attribs}"
-    #   {chardata, rest} = parse_chardata("", rest)
-    #   IO.inspect " --> #{chardata}"
-    # end
-    #parser_state = ...
-    parse_elements(parser_state, rest)
+  defp itunes_owner_element(content) do
+    Enum.reduce content, %{name: nil, email: nil}, fn(el, map) ->
+      case el do
+        {:xmlel, "itunes:name", _attr, content} -> %{map | name: pcdata(content)}
+        {:xmlel, "itunes:email", _attr, content} -> %{map | email: pcdata(content)}
+        _ -> map
+      end
+    end
   end
-  defp parse_elements(parser_state, {:xmlel, name, attribs}) do
-    IO.inspect "got last el #{name} #{attribs}"
-    # parser_state = ...
-    parser_state
+
+  defp itunes_element(content, name, attr, itunes) do
+    case name do
+      "itunes:author" -> %Itunes{ itunes | author: pcdata(content)}
+      "itunes:block" -> %Itunes{ itunes | block: pcdata(content)}
+      "itunes:category" -> %Itunes{ itunes | category: pcdata(content)}
+      "itunes:image" -> %Itunes{ itunes | image: (content |> extract_attribute(attr, "href"))}
+      "itunes:duration" -> %Itunes{ itunes | duration: pcdata(content)}
+      "itunes:explicit" -> %Itunes{ itunes | explicit: pcdata(content)}
+      "itunes:isClosedCaptioned" -> %Itunes{ itunes | isClosedCaptioned: pcdata(content)}
+      "itunes:order" -> %Itunes{ itunes | order: pcdata(content)}
+      "itunes:complete" -> %Itunes{ itunes | complete: pcdata(content)}
+      "itunes:new_feed_url" -> %Itunes{ itunes | new_feed_url: pcdata(content)}
+
+      "itunes:owner" -> %Itunes{ itunes | owner: (content |> itunes_owner_element)}
+
+      "itunes:subtitle" -> %Itunes{ itunes | subtitle: pcdata(content)}
+      "itunes:summary" -> %Itunes{ itunes | summary: pcdata(content)}
+      _ -> itunes
+    end
   end
-  defp parse_elements(parser_state, {:xmlcdata, cdata}) do
-    # if String.strip(cdata) != "" do
-    #   # IO.inspect " got data #{String.strip(cdata) |> String.slice(0, 100)}"
-    #   # parser_state = ...
-    # end
-    parser_state
+
+  defp pe({:xmlel, "channel", attribs, content}) do
+    Enum.reduce content, %Feed{ meta: %MetaData{itunes: %Itunes{}}}, fn(el, feed) ->
+      case el do
+        {:xmlel, "title", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | title: pcdata(content)} }
+        {:xmlel, "link", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | link: pcdata(content)} }
+        {:xmlel, "description", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | description: pcdata(content)} }
+        {:xmlel, "author", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | author: pcdata(content)} }
+        {:xmlel, "language", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | language: pcdata(content)} }
+        {:xmlel, "copyright", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | copyright: pcdata(content)} }
+
+        {:xmlel, "pubDate", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | publication_date: pcdata(content) |> parse_datetime } }
+        {:xmlel, "lastBuildDate", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | last_build_date: pcdata(content) |> parse_datetime } }
+
+        {:xmlel, "generator", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | generator: pcdata(content)} }
+        {:xmlel, "category", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | category: pcdata(content)} }
+        {:xmlel, "rating", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | rating: pcdata(content)} }
+        {:xmlel, "docs", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | docs: pcdata(content)} }
+        {:xmlel, "cloud", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | cloud: pcdata(content)} }
+        {:xmlel, "ttl", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | ttl: pcdata(content)} }
+        {:xmlel, "managing_editor", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | managing_editor: pcdata(content)} }
+        {:xmlel, "web_master", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | web_master: pcdata(content)} }
+
+        {:xmlel, "skipHours", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | skip_hours: (content |> map_element("hour") |> map_to_integer ) } }
+        {:xmlel, "skipDays", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | skip_days: (content |> map_element("day") |> map_to_integer ) } }
+
+        {:xmlel, "image", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | image: (content |> image_element) } }
+        {:xmlel, "atom:link", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | image: (content |> image_element) } }
+        
+        {:xmlel, name, attr, content} when binary_part(name, 0, 7) == "itunes:" ->
+          %Feed{feed | meta: %MetaData{ feed.meta | itunes: (content |> itunes_element(name, attr, feed.meta.itunes)) } }
+
+        _ -> feed
+      end
+    end
   end
 
 end
