@@ -174,6 +174,7 @@ defmodule Feedme.Parsers.RSS2Stream do
     end
   end
 
+  # not very efficient, refactor! you braindead wreck!
   defp extract_attribute(content, attr, attribute_name) do
     Enum.reduce attr, nil, fn({k, v}, acc) ->
       case k do
@@ -223,13 +224,43 @@ defmodule Feedme.Parsers.RSS2Stream do
     }
   end
 
+  defp psc_elements(content, attributes) do
+    Enum.reduce content, [], fn(el, list) ->
+      case el do
+        {:xmlel, "psc:chapter", attr, content} -> [
+            %Psc{
+              start: Access.get(attributes, "rel", nil),
+              title: Access.get(attributes, "title", nil),
+              href: Access.get(attributes, "href", nil),
+              image: Access.get(attributes, "image", nil)
+            } | list]
+        _ -> list
+      end
+    end 
+    #|> Enum.reverse
+  end
+
   defp parse_item(content, _attr) do
-    Enum.reduce content, %Entry{itunes: %Itunes{}}, fn(el, entry) ->
+    Enum.reduce content, %Entry{itunes: %Itunes{}, enclosure: %Enclosure{} }, fn(el, entry) ->
       case el do
         {:xmlel, "title", _attr, content} -> %Entry{entry | title: pcdata(content)}
         {:xmlel, "link", _attr, content} -> %Entry{entry | link: pcdata(content)}
         {:xmlel, "description", _attr, content} -> %Entry{entry | description: pcdata(content)}
         {:xmlel, "author", _attr, content} -> %Entry{entry | author: pcdata(content)}
+        {:xmlel, "guid", _attr, content} -> %Entry{entry | guid: pcdata(content)}
+
+        {:xmlel, "categories", _attr, content} -> %Entry{entry | categories: pcdata(content)}
+        #{:xmlel, "comments", _attr, content} -> %Entry{entry | comments: pcdata(content)}
+        #{:xmlel, "enclosure", _attr, content} -> %Entry{entry | enclosure: pcdata(content)}
+        {:xmlel, "pubDate", _attr, content} -> %Entry{entry | publication_date: pcdata(content)}
+        {:xmlel, "source", _attr, content} -> %Entry{entry | source: pcdata(content)}
+        {:xmlel, name, attr, content} when binary_part(name, 0, 7) == "itunes:" ->
+          %Entry{entry | itunes: (content |> itunes_element(name, attr, entry.itunes)) }
+
+        {:xmlel, "psc:chapters", attr, content} -> %Entry{entry | psc: (content |> psc_elements(attr)) }
+
+        {:xmlel, "atom:link", attr, content} -> %Entry{entry | atom_links: [ atom_link(content, attr) | entry.atom_links] }
+
         _ -> entry
       end
     end
