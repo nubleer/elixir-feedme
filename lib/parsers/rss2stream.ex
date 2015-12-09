@@ -23,6 +23,21 @@ defmodule Feedme.Parsers.RSS2Stream do
     end
   end
 
+  def valid?(xmlstring) do
+    parsed_xml_result = :fxml_stream.parse_element(xmlstring)
+    case parsed_xml_result do
+      {:error, reason} -> false
+      {:xmlel, "rss", _, content} -> 
+        channel = Enum.find content, fn(e) ->
+          match? {:xmlel, "channel", _, _}, e 
+        end
+        case channel do
+          nil -> false
+          _ -> true
+        end
+      _ -> false
+    end
+  end
 
   defp pcdata(list) do
     Enum.reduce list, "", fn(el, acc) -> 
