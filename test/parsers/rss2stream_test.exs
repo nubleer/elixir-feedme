@@ -28,10 +28,10 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
     assert match? {:error, :no_rss_root}, result
 
     result = RSS2Stream.parse("<root>")
-    assert match? {:error, :no_rss_root}, result
+    assert match?  {:error, {3, "no element found"}}, result
 
     result = RSS2Stream.parse("<rss></rss>")
-    assert match? {:ok, _}, result
+    assert match? {:error, :no_channel_element}, result
 
     # result = RSS2Stream.parse("<rss>")
     # assert match? {:error, :parser_timeout}, result
