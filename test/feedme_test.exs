@@ -12,12 +12,16 @@ defmodule FeedmeTest do
   end
 
 
-  test "parse2", %{podcast_cre: podcast_cre} do
+  test "parse-cre", %{podcast_cre: podcast_cre} do
     assert {:ok, feed} = Feedme.parse(podcast_cre)
     assert "CRE: Technik, Kultur, Gesellschaft" = feed.meta.title
     assert nil != feed.meta.itunes
     assert "Metaebene Personal Media - Tim Pritlove" = feed.meta.itunes.author
   end
 
-
+  test "parse vodcast" do
+    {:ok, rss2} = File.read("test/fixtures/rss2/vodcast.xml")
+    {:ok, feed} = Feedme.parse(rss2)
+    assert "Woodsongs Vodcasts" = feed.meta.title
+  end
 end
