@@ -1,7 +1,4 @@
 defmodule Feedme do
-  alias Feedme.XmlNode
-  alias Feedme.Parsers.RSS2
-  alias Feedme.Parsers.Atom
 
   defmodule Image do
     defstruct title: nil,
@@ -94,24 +91,7 @@ defmodule Feedme do
   end
 
   def parse(xml) do
-    {:ok, XmlNode.from_string(xml)}
-    |> detect_parser
-    |> parse_document
+    Feedme.Parsers.RSS2Stream.parse xml
   end
 
-  defp parse_document({:ok, parser, document}) do
-    {:ok, parser.parse(document)}
-  end
-
-  defp parse_document(other), do: other
-
-  defp detect_parser({:ok, document}) do
-    cond do
-      RSS2.valid?(document) -> {:ok, RSS2, document}
-      Atom.valid?(document) -> {:ok, Atom, document}
-      true -> {:error, "Feed format not valid"}
-    end
-  end
-
-  defp detect_parser(other), do: other
 end
