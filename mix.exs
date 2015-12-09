@@ -3,8 +3,8 @@ defmodule Feedme.Mixfile do
 
   def project do
     [app: :feedme,
-     version: "0.0.1",
-     elixir: "~> 1.0",
+     version: "1.0.0",
+     elixir: "~> 1.1",
      description: "Elixir RSS/Atom parser built on erlang's xmerl xml parser",
      package: package,
      build_embedded: Mix.env == :prod,
