@@ -24,8 +24,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
   end
 
   test "parse_meta", %{sample1: sample1, sample2: sample2, big_sample: big_sample} do
-    meta = RSS2Stream.parse_meta(sample1)
-    assert meta == %Feedme.MetaData{
+    {:ok, feed} = RSS2Stream.parse(sample1)
+    assert feed.meta == %Feedme.MetaData{
       title: "W3Schools Home Page",
       link: "http://www.w3schools.com",
       description: "Free web building tutorials",
@@ -61,22 +61,22 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
         year: 2015
       },
       itunes: %Feedme.Itunes{
-        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
-        image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+        author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false,
+        image: nil, is_closed_captioned: false, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
       }
     }
 
-    meta = RSS2Stream.parse_meta(sample2)
-    assert meta == %Feedme.MetaData{
+    {:ok, feed} = RSS2Stream.parse(sample2)
+    assert feed.meta == %Feedme.MetaData{
       link: "http://www.w3schools.com",
       itunes: %Feedme.Itunes{
-        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
-        image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+        author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false,
+        image: nil, is_closed_captioned: false, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
       }
     }
 
-    meta = RSS2Stream.parse_meta(big_sample)
-    assert meta == %Feedme.MetaData{
+    {:ok, feed} = RSS2Stream.parse(big_sample)
+    assert feed.meta == %Feedme.MetaData{
       description: "software is fun",
       link: "http://blog.drewolson.org/",
       title: "collect {thoughts}",
@@ -93,17 +93,17 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
         year: 2015
       },
       itunes: %Feedme.Itunes{
-        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
-        image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+        author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false,
+        image: nil, is_closed_captioned: false, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
       },
       atom_links: [%Feedme.AtomLink{href: "http://blog.drewolson.org/rss/", rel: "self", title: nil, type: "application/rss+xml"}]
     }
   end
 
   test "parse_meta with atom links", %{sample3: sample3} do
-    meta = RSS2Stream.parse_meta(sample3)
-    assert length(meta.atom_links) == 9
-    [link | rest ] = meta.atom_links
+    {:ok, feed} = RSS2Stream.parse(sample3)
+    assert length(feed.meta.atom_links) == 9
+    [link | rest ] = feed.meta.atom_links
     assert link.title =="CRE: Technik, Kultur, Gesellschaft (MPEG-4 AAC Audio)"
     assert link.rel == "self"
     assert link.href == "http://feeds.metaebene.me/cre/m4a"
@@ -114,8 +114,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
   end
 
   test "parse podast feed meta including itunes namespaced elements", %{sample3: sample3} do
-    meta = RSS2Stream.parse_meta(sample3)
-    assert meta == %Feedme.MetaData{
+    {:ok, feed} = RSS2Stream.parse(sample3)
+    assert feed.meta == %Feedme.MetaData{
       atom_links: [
          %Feedme.AtomLink{href: "http://feeds.metaebene.me/cre/m4a", rel: "self",
           title: "CRE: Technik, Kultur, Gesellschaft (MPEG-4 AAC Audio)", type: "application/rss+xml"},
@@ -134,8 +134,9 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
       description: "Der Interview-Podcast mit Tim Pritlove", docs: nil, generator: "Podlove Podcast Publisher v2.3.3",
       image: %Feedme.Image{description: nil, height: nil, link: "http://cre.fm", title: "CRE: Technik, Kultur, Gesellschaft",
        url: "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg", width: nil},
-      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: "no", category: nil, complete: nil, duration: nil,
-       explicit: "no", image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: "\n      \n      \n    ",
+      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: false, category: "", complete: false, duration: nil,
+       explicit: false, image:  "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg", 
+       is_closed_captioned: false, new_feed_url: nil, order: nil, owner: %{email: "cre@metaebene.me", name: "Tim Pritlove"},
        subtitle: "Der Interview-Podcast mit Tim Pritlove",
        summary: "Intensive und ausführliche Gespräche über Themen aus Technik, Kultur und Gesellschaft, das ist CRE. Interessante Gesprächspartner stehen Rede und Antwort zu Fragen, die man normalerweise selten gestellt bekommt. CRE möchte  aufklären, weiterbilden und unterhalten."},
       language: "de-DE",
@@ -147,8 +148,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
   end
 
   test "parse_entry", %{big_sample: big_sample} do
-    entry = XmlNode.first(big_sample, "/rss/channel/item")
-            |> RSS2Stream.parse_entry
+    {:ok, feed} = RSS2Stream.parse(big_sample)
+    entry = hd(feed.entries)
 
     assert entry == %Feedme.Entry{
       author: nil,
@@ -158,7 +159,7 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
       enclosure: nil,
       guid: "9b68a5a7-4ab0-420e-8105-0462357fa1f1",
       itunes: %Feedme.Itunes{
-        author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil, image: nil, isClosedCaptioned: nil,
+        author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false, image: nil, is_closed_captioned: false,
         new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
       },
       link: "http://blog.drewolson.org/elixir-streams/",
@@ -191,7 +192,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
   end
 
   test "parse podast feed entries with itunes and podlove simple chapter (psc)", %{sample3: sample3} do
-    entries = RSS2Stream.parse_entries(sample3)
+    {:ok, feed} = RSS2Stream.parse(sample3)
+    entries = feed.entries
     assert entries
     assert length(entries) == 60
     entry = hd(entries)
@@ -199,8 +201,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
       description: "Der einst von Linus Torvalds geschaffene Betriebssystemkernel Linux ist eine freie Reimplementierung der UNIX Betriebssystemfamilie und hat sich in den letzten 20 Jahren sehr eigenständig entwickelt. Der Rest des Systems, das Userland, hat sich aber noch sehr stark an der klassischen Struktur von UNIX orientiert. Mit der Initiative systemd hat sich dies geändert und es entsteht eine sehr eigenständige Definition einer Linux-Systemebene, die sich zwischen Kernel und Anwendungen entfaltet und dort die Regeln der Installation und Systemadministration neu definiert.\n\nIch spreche mit dem Initiator des Projekts, Lennart Poettering, der schon vorher verschiedene Subsysteme zur Linux-Landschaft beigetragen hat über die Motivation und Struktur des Projekts, den aktuellen und zukünftigen Möglichkeiten der Software und welche kulturellen Auswirkungen der Einzug einer neuen Abstraktionsebene mit sich bringt.",
       enclosure: %Feedme.Enclosure{length: "65230396", type: "audio/mp4",
       url: "http://tracking.feedpress.it/link/13440/2008525/cre209-das-linux-system.m4a"}, guid: "podlove-2015-11-09t23:06:21+00:00-4501b131b3a9b1a",
-      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: nil, category: nil, complete: nil, duration: "02:50:21",
-      explicit: nil, image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil,
+      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: nil, category: nil, complete: false, duration: "02:50:21",
+      explicit: false, image: "http://cre.fm/wp-content/cache/podlove/fc/e7582fdeecef74ce069536b0283454/cre209-das-linux-system_original.jpg", is_closed_captioned: false, new_feed_url: nil, order: nil, owner: nil,
       subtitle: "systemd leitet die neue Generation der Linux Systemarchitektur ein",
       summary: "Der einst von Linus Torvalds geschaffene Betriebssystemkernel Linux ist eine freie Reimplementierung der UNIX Betriebssystemfamilie und hat sich in den letzten 20 Jahren sehr eigenständig entwickelt. Der Rest des Systems, das Userland, hat sich aber noch sehr stark an der klassischen Struktur von UNIX orientiert. Mit der Initiative systemd hat sich dies geändert und es entsteht eine sehr eigenständige Definition einer Linux-Systemebene, die sich zwischen Kernel und Anwendungen entfaltet und dort die Regeln der Installation und Systemadministration neu definiert.\n\nIch spreche mit dem Initiator des Projekts, Lennart Poettering, der schon vorher verschiedene Subsysteme zur Linux-Landschaft beigetragen hat über die Motivation und Struktur des Projekts, den aktuellen und zukünftigen Möglichkeiten der Software und welche kulturellen Auswirkungen der Einzug einer neuen Abstraktionsebene mit sich bringt."},
       link: "http://cre.fm/cre209-das-linux-system",
@@ -237,7 +239,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
   end
 
   test "parse_entry with atom links", %{sample3: sample3} do
-    entries = RSS2Stream.parse_entries(sample3)
+    {:ok, feed} = RSS2Stream.parse(sample3)
+    entries = feed.entries
     assert entries
     [entry | _ ] = entries
     assert length(entry.atom_links) == 2
@@ -255,7 +258,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
 
 
   test "parse_entries", %{sample1: sample1, sample2: sample2} do
-    [item1, item2] = RSS2Stream.parse_entries(sample1)
+    {:ok, feed} = RSS2Stream.parse(sample1)
+    [item1, item2] = feed.entries
     
     assert item1.title == "RSS Tutorial"
     assert item1.link == "http://www.w3schools.com/webservices"
@@ -265,7 +269,8 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
     assert item2.link == "http://www.w3schools.com/xml"
     assert item2.description == "New XML tutorial on W3Schools"
 
-    [item1, item2] = RSS2Stream.parse_entries(sample2)
+    {:ok, feed} = RSS2Stream.parse(sample2)
+    [item1, item2] = feed.entries
     
     assert item1.title == nil
     assert item1.link == "http://www.w3schools.com/webservices"
@@ -277,28 +282,28 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
   end
 
   test "parse wpt", %{sample4: sample4} do
-    feed = RSS2Stream.parse(sample4)
+    {:ok, feed} = RSS2Stream.parse(sample4)
     assert feed.meta.title == "WordPress Weekly"
-    entries = RSS2Stream.parse_entries(sample4)
+    entries = feed.entries
     assert 12 == length(entries)
     assert Enum.at(entries, 0).guid == "http://wptavern.com?p=49295&preview_id=49295"
   end
 
 
   test "parse sample1", %{sample1: sample1} do
-    feed = RSS2Stream.parse(sample1)
+    {:ok, feed} = RSS2Stream.parse(sample1)
 
     assert feed == %Feedme.Feed{
       entries: [
         %Feedme.Entry{author: nil, categories: [], psc: [], comments: nil, description: "New RSS tutorial on W3Schools",
           enclosure: nil, guid: nil, itunes: %Feedme.Itunes{
-            author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil, image: nil, isClosedCaptioned: nil,
+            author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false, image: nil, is_closed_captioned: false,
             new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
           }, link: "http://www.w3schools.com/webservices", publication_date: nil, source: nil, title: "RSS Tutorial"
         },
         %Feedme.Entry{author: nil, categories: [], psc: [], comments: nil, description: "New XML tutorial on W3Schools", 
           enclosure: nil, guid: nil, itunes: %Feedme.Itunes{
-            author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil, image: nil, isClosedCaptioned: nil,
+            author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false, image: nil, is_closed_captioned: false,
             new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
           }, link: "http://www.w3schools.com/xml", publication_date: nil, source: nil, title: "XML Tutorial"
         }
@@ -339,56 +344,10 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
           year: 2015
         },
         itunes: %Feedme.Itunes{
-          author: nil, block: nil, category: nil, complete: nil, duration: nil, explicit: nil,
-          image: nil, isClosedCaptioned: nil, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
+          author: nil, block: nil, category: nil, complete: false, duration: nil, explicit: false,
+          image: nil, is_closed_captioned: false, new_feed_url: nil, order: nil, owner: nil, subtitle: nil, summary: nil
         }
       }
     }
   end
-
-  # setup do
-  #   {:ok, sample1} = File.read "test/fixtures/rss2/sample1.xml"
-  #   # sample2 = XmlNode.from_file("test/fixtures/rss2/sample2.xml")
-  #   {:ok, sample3} = File.read("test/fixtures/rss2/cre.xml")
-  #   # sample4 = XmlNode.from_file("test/fixtures/rss2/wpt.xml")
-  #   # big_sample = XmlNode.from_file("test/fixtures/rss2/bigsample.xml")
-
-  #   {:ok, [
-  #     sample1: sample1, 
-  #     # sample2: sample2, 
-  #     sample3: sample3, 
-  #     # sample4: sample4, 
-  #     # big_sample: big_sample
-  #   ]}
-  # end
-
-
-  # test "parser basics and partial xml error handling" do
-  #   result = RSS2StreamStream.parse("<root></root>")
-  #   assert match? {:error, :no_rss_root}, result
-
-  #   result = RSS2StreamStream.parse("<root></root>")
-  #   assert match? {:error, :no_rss_root}, result
-
-  #   result = RSS2StreamStream.parse("<root>")
-  #   assert match?  {:error, {3, "no element found"}}, result
-
-  #   result = RSS2StreamStream.parse("<rss></rss>")
-  #   assert match? {:error, :no_channel_element}, result
-
-  #   # result = RSS2StreamStream.parse("<rss>")
-  #   # assert match? {:error, :parser_timeout}, result
-  # end
-
-  # test "small input", %{sample1: sample1} do
-  #   result = RSS2StreamStream.parse(sample1)
-  #   IO.inspect result
-  #   assert match? {:ok, _}, result
-  # end
-  
-  # test "large input", %{sample3: sample3} do
-  #   result = RSS2StreamStream.parse(sample3)
-  #   IO.inspect result
-  #   assert match? {:ok, _}, result
-  # end
 end

@@ -26,7 +26,7 @@ defmodule Feedme.Parsers.RSS2Stream do
   def valid?(xmlstring) do
     parsed_xml_result = :fxml_stream.parse_element(xmlstring)
     case parsed_xml_result do
-      {:error, reason} -> false
+      {:error, _} -> false
       {:xmlel, "rss", _, content} -> 
         channel = Enum.find content, fn(e) ->
           match? {:xmlel, "channel", _, _}, e 
@@ -40,15 +40,16 @@ defmodule Feedme.Parsers.RSS2Stream do
   end
 
   defp pcdata(list) do
-    Enum.reduce list, "", fn(el, acc) -> 
+    list 
+    |> Enum.reduce "", (fn(el, acc) -> 
       case el do
-        {:xmlcdata, cdata} -> acc <> cdata
+        {:xmlcdata, cdata} -> acc <> String.strip(cdata)
         _ -> acc
       end
-    end
+    end)
   end
 
-  defp parse_datetime(text) do
+  def parse_datetime(text) do
     case text |> DateFormat.parse("{RFC1123}") do
       {:ok, date} -> date
       _ -> nil
@@ -75,6 +76,7 @@ defmodule Feedme.Parsers.RSS2Stream do
     Enum.reduce content, %Image{}, fn(el, image) ->
       case el do
         {:xmlel, "title", _attr, content} -> %Image{image | title: pcdata(content)}
+        {:xmlel, "description", _attr, content} -> %Image{image | description: pcdata(content)}
         {:xmlel, "url", _attr, content} -> %Image{image | url: pcdata(content)}
         {:xmlel, "link", _attr, content} -> %Image{image | link: pcdata(content)}
         {:xmlel, "width", _attr, content} -> %Image{image | width: (pcdata(content) |> String.to_integer)}
@@ -97,33 +99,37 @@ defmodule Feedme.Parsers.RSS2Stream do
   defp itunes_element(content, name, attr, itunes) do
     case name do
       "itunes:author" -> %Itunes{ itunes | author: pcdata(content)}
-      "itunes:block" -> %Itunes{ itunes | block: pcdata(content)}
+      "itunes:block" -> %Itunes{ itunes | block: pcdata(content) == "yes"}
       "itunes:category" -> %Itunes{ itunes | category: pcdata(content)}
       "itunes:image" -> %Itunes{ itunes | image: Access.get(attr, "href")}
       "itunes:duration" -> %Itunes{ itunes | duration: pcdata(content)}
-      "itunes:explicit" -> %Itunes{ itunes | explicit: pcdata(content)}
-      "itunes:isClosedCaptioned" -> %Itunes{ itunes | isClosedCaptioned: pcdata(content)}
+      "itunes:explicit" -> %Itunes{ itunes | explicit: pcdata(content) == "yes"}
+      "itunes:isClosedCaptioned" -> %Itunes{ itunes | is_closed_captioned: pcdata(content) == "yes" }
       "itunes:order" -> %Itunes{ itunes | order: pcdata(content)}
-      "itunes:complete" -> %Itunes{ itunes | complete: pcdata(content)}
+      "itunes:complete" -> %Itunes{ itunes | complete: pcdata(content) == "yes"}
       "itunes:new_feed_url" -> %Itunes{ itunes | new_feed_url: pcdata(content)}
-
       "itunes:owner" -> %Itunes{ itunes | owner: (content |> itunes_owner_element)}
-
       "itunes:subtitle" -> %Itunes{ itunes | subtitle: pcdata(content)}
       "itunes:summary" -> %Itunes{ itunes | summary: pcdata(content)}
       _ -> itunes
     end
   end
 
-  defp enclosure_content(content) do
-    Enum.reduce content, %Enclosure{}, fn(el, encl) ->
-      case el do
-        {:xmlel, "url", _attr, content} -> %Enclosure{encl | url: pcdata(content)}
-        {:xmlel, "length", _attr, content} -> %Enclosure{encl | length: pcdata(content)}
-        {:xmlel, "type", _attr, content} -> %Enclosure{encl | type: pcdata(content)}
-        _ -> encl
-      end
-    end
+  defp enclosure_content(attr) do
+    %Enclosure{
+      url: Access.get(attr, "url"),
+      length: Access.get(attr, "length"),
+      type: Access.get(attr, "type")
+    }
+
+    # Enum.reduce content, %Enclosure{}, fn(el, encl) ->
+    #   case el do
+    #     {:xmlel, "url", _attr, content} -> %Enclosure{encl | url: pcdata(content)}
+    #     {:xmlel, "length", _attr, content} -> %Enclosure{encl | length: pcdata(content)}
+    #     {:xmlel, "type", _attr, content} -> %Enclosure{encl | type: pcdata(content)}
+    #     _ -> encl
+    #   end
+    # end
   end
 
   defp atom_link(_content, attributes) do
@@ -136,23 +142,23 @@ defmodule Feedme.Parsers.RSS2Stream do
   end
 
   defp psc_elements(content, _attributes) do
-    Enum.reduce content, [], fn(el, list) ->
+    Enum.reduce(content, [], fn(el, list) ->
       case el do
         {:xmlel, "psc:chapter", attributes, _content} -> [
             %Psc{
-              start: Access.get(attributes, "rel", nil),
+              start: Access.get(attributes, "start", nil),
               title: Access.get(attributes, "title", nil),
               href: Access.get(attributes, "href", nil),
               image: Access.get(attributes, "image", nil)
             } | list]
         _ -> list
       end
-    end 
-    #|> Enum.reverse
+    end)
+    |> Enum.reverse
   end
 
   defp parse_item(content, _attr) do
-    Enum.reduce content, %Entry{itunes: %Itunes{}, enclosure: %Enclosure{} }, fn(el, entry) ->
+    entry = Enum.reduce content, %Entry{itunes: %Itunes{}, enclosure: nil }, fn(el, entry) ->
       case el do
         {:xmlel, "title", _attr, content} -> %Entry{entry | title: pcdata(content)}
         {:xmlel, "link", _attr, content} -> %Entry{entry | link: pcdata(content)}
@@ -160,10 +166,11 @@ defmodule Feedme.Parsers.RSS2Stream do
         {:xmlel, "author", _attr, content} -> %Entry{entry | author: pcdata(content)}
         {:xmlel, "guid", _attr, content} -> %Entry{entry | guid: pcdata(content)}
 
-        {:xmlel, "categories", _attr, content} -> %Entry{entry | categories: [ pcdata(content) | entry.categories] }
+        {:xmlel, "category", _attr, content} -> %Entry{entry | categories: [ pcdata(content) | entry.categories] }
         {:xmlel, "comments", _attr, content} -> %Entry{entry | comments: pcdata(content)}
-        {:xmlel, "enclosure", _attr, content} -> %Entry{entry | enclosure: (content |> enclosure_content) }
-        {:xmlel, "pubDate", _attr, content} -> %Entry{entry | publication_date: pcdata(content)}
+        {:xmlel, "enclosure", attr, _content} -> 
+          %Entry{entry | enclosure: (attr |> enclosure_content) }
+        {:xmlel, "pubDate", _attr, content} -> %Entry{entry | publication_date: pcdata(content) |> parse_datetime}
         {:xmlel, "source", _attr, content} -> %Entry{entry | source: pcdata(content)}
         {:xmlel, name, attr, content} when binary_part(name, 0, 7) == "itunes:" ->
           %Entry{entry | itunes: (content |> itunes_element(name, attr, entry.itunes)) }
@@ -175,6 +182,7 @@ defmodule Feedme.Parsers.RSS2Stream do
         _ -> entry
       end
     end
+    %Entry{entry | atom_links: Enum.reverse(entry.atom_links) }
   end
 
   defp do_parse({:xmlel, "channel", _attribs, content}) do
@@ -215,6 +223,7 @@ defmodule Feedme.Parsers.RSS2Stream do
         _ -> feed
       end
     end
+    result = %Feed{result | entries: Enum.reverse(result.entries), meta: %MetaData{result.meta | atom_links: Enum.reverse(result.meta.atom_links) }}
     {:ok, result}
   end
 
