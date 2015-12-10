@@ -94,12 +94,8 @@ defmodule Feedme do
     {:ok, fd, file_path} = Temp.open "xmllint-reencode"
     IO.binwrite fd, xml
     File.close fd
-
-    result = %Porcelain.Result{out: output} = Porcelain.exec("xmllint", ["--encode", "utf-8", file_path], in: "", out: :string)
-    #IO.inspect output
+    result = %Porcelain.Result{out: output} = Porcelain.exec("xmllint", ["--encode", "utf-8", file_path], out: :string)
     File.rm file_path
-
-
     output
   end
 

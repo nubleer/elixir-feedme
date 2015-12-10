@@ -1,8 +1,6 @@
 defmodule FeedmeTest do
   use ExUnit.Case, async: false
 
-  import Mock
-
   setup do
     {:ok, wrong} = File.read("test/fixtures/wrong.xml")
     {:ok, rss2} = File.read("test/fixtures/rss2/bigsample.xml")
