@@ -16,7 +16,7 @@ defmodule Feedme.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
-    [applications: [:logger, :tzdata, :fast_xml]]
+    [applications: [:logger, :tzdata, :fast_xml, :porcelain]]
   end
 
   # Describe Hex.pm package
@@ -41,7 +41,8 @@ defmodule Feedme.Mixfile do
       {:mix_test_watch, "~> 0.2", only: :test},
       {:mock, "~> 0.1.1", only: :test},
       {:timex, "~> 1.0.0-rc3"},
-      {:fast_xml, "~> 1.1"}
+      {:fast_xml, "~> 1.1"},
+      {:porcelain, "~> 2.0"}
     ]
   end
 end

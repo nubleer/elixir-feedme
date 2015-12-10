@@ -90,8 +90,17 @@ defmodule Feedme do
               title: nil
   end
 
+  defp reencode(xml) do
+    result = Porcelain.exec("xmllint", ["--encode", "utf-8", "-"], in: xml, out: :string)
+    IO.inspect result
+    xml
+  end
+
   def parse(xml) do
-    Feedme.Parsers.RSS2Stream.parse xml
+    case Feedme.Parsers.RSS2Stream.parse xml do
+      {:error, {4, _}} -> xml |> reencode |> Feedme.Parsers.RSS2Stream.parse
+      ok -> ok
+    end
   end
 
 end
