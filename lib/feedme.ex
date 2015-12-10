@@ -91,9 +91,16 @@ defmodule Feedme do
   end
 
   defp reencode(xml) do
-    result = Porcelain.exec("xmllint", ["--encode", "utf-8", "-"], in: xml, out: :string)
-    IO.inspect result
-    xml
+    {:ok, fd, file_path} = Temp.open "xmllint-reencode"
+    IO.binwrite fd, xml
+    File.close fd
+
+    result = %Porcelain.Result{out: output} = Porcelain.exec("xmllint", ["--encode", "utf-8", file_path], in: "", out: :string)
+    #IO.inspect output
+    File.rm file_path
+
+
+    output
   end
 
   def parse(xml) do

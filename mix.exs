@@ -42,7 +42,8 @@ defmodule Feedme.Mixfile do
       {:mock, "~> 0.1.1", only: :test},
       {:timex, "~> 1.0.0-rc3"},
       {:fast_xml, "~> 1.1"},
-      {:porcelain, "~> 2.0"}
+      {:porcelain, "~> 2.0"},
+      {:temp, "~> 0.2"}
     ]
   end
 end
