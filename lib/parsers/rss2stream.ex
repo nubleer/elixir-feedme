@@ -100,7 +100,7 @@ defmodule Feedme.Parsers.RSS2Stream do
     case name do
       "itunes:author" -> %Itunes{ itunes | author: pcdata(content)}
       "itunes:block" -> %Itunes{ itunes | block: pcdata(content) == "yes"}
-      "itunes:category" -> %Itunes{ itunes | category: pcdata(content)}
+      "itunes:category" -> %Itunes{ itunes | category: Access.get(attr, "text")}
       "itunes:image" -> %Itunes{ itunes | image: Access.get(attr, "href")}
       "itunes:duration" -> %Itunes{ itunes | duration: pcdata(content)}
       "itunes:explicit" -> %Itunes{ itunes | explicit: pcdata(content) == "yes"}

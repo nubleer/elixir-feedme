@@ -134,7 +134,7 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
       description: "Der Interview-Podcast mit Tim Pritlove", docs: nil, generator: "Podlove Podcast Publisher v2.3.3",
       image: %Feedme.Image{description: nil, height: nil, link: "http://cre.fm", title: "CRE: Technik, Kultur, Gesellschaft",
        url: "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg", width: nil},
-      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: false, category: "", complete: false, duration: nil,
+      itunes: %Feedme.Itunes{author: "Metaebene Personal Media - Tim Pritlove", block: false, category: "Technology", complete: false, duration: nil,
        explicit: false, image:  "http://cre.fm/wp-content/cache/podlove/f9/f9fa0c2498fe20a0f85d4928e8423e/cre-technik-kultur-gesellschaft_original.jpg", 
        is_closed_captioned: false, new_feed_url: nil, order: nil, owner: %{email: "cre@metaebene.me", name: "Tim Pritlove"},
        subtitle: "Der Interview-Podcast mit Tim Pritlove",
