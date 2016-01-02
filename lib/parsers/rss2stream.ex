@@ -41,18 +41,25 @@ defmodule Feedme.Parsers.RSS2Stream do
 
   defp pcdata(list) do
     list 
-    |> Enum.reduce "", (fn(el, acc) -> 
+    |> Enum.reduce("", (fn(el, acc) -> 
       case el do
         {:xmlcdata, cdata} -> acc <> String.strip(cdata)
         _ -> acc
       end
-    end)
+    end))
   end
 
   def parse_datetime(text) do
     case text |> DateFormat.parse("{RFC1123}") do
       {:ok, date} -> date
       _ -> nil
+    end
+  end
+
+  defp attr_get(attr, key, default \\ nil) do
+    case :lists.keyfind(key, 1, attr) do
+      {^key, value} -> value
+      false -> default
     end
   end
 
@@ -100,8 +107,8 @@ defmodule Feedme.Parsers.RSS2Stream do
     case name do
       "itunes:author" -> %Itunes{ itunes | author: pcdata(content)}
       "itunes:block" -> %Itunes{ itunes | block: pcdata(content) == "yes"}
-      "itunes:category" -> %Itunes{ itunes | category: Access.get(attr, "text")}
-      "itunes:image" -> %Itunes{ itunes | image: Access.get(attr, "href")}
+      "itunes:category" -> %Itunes{ itunes | category: attr_get(attr, "text")}
+      "itunes:image" -> %Itunes{ itunes | image: attr_get(attr, "href")}
       "itunes:duration" -> %Itunes{ itunes | duration: pcdata(content)}
       "itunes:explicit" -> %Itunes{ itunes | explicit: pcdata(content) == "yes"}
       "itunes:isClosedCaptioned" -> %Itunes{ itunes | is_closed_captioned: pcdata(content) == "yes" }
@@ -117,9 +124,9 @@ defmodule Feedme.Parsers.RSS2Stream do
 
   defp enclosure_content(attr) do
     %Enclosure{
-      url: Access.get(attr, "url"),
-      length: Access.get(attr, "length"),
-      type: Access.get(attr, "type")
+      url: attr_get(attr, "url"),
+      length: attr_get(attr, "length"),
+      type: attr_get(attr, "type")
     }
 
     # Enum.reduce content, %Enclosure{}, fn(el, encl) ->
@@ -134,10 +141,10 @@ defmodule Feedme.Parsers.RSS2Stream do
 
   defp atom_link(_content, attributes) do
     %AtomLink{
-      rel: Access.get(attributes, "rel", nil),
-      type: Access.get(attributes, "type", nil),
-      href: Access.get(attributes, "href", nil),
-      title: Access.get(attributes, "title", nil),
+      rel: attr_get(attributes, "rel", nil),
+      type: attr_get(attributes, "type", nil),
+      href: attr_get(attributes, "href", nil),
+      title: attr_get(attributes, "title", nil),
     }
   end
 
@@ -146,10 +153,10 @@ defmodule Feedme.Parsers.RSS2Stream do
       case el do
         {:xmlel, "psc:chapter", attributes, _content} -> [
             %Psc{
-              start: Access.get(attributes, "start", nil),
-              title: Access.get(attributes, "title", nil),
-              href: Access.get(attributes, "href", nil),
-              image: Access.get(attributes, "image", nil)
+              start: attr_get(attributes, "start", nil),
+              title: attr_get(attributes, "title", nil),
+              href: attr_get(attributes, "href", nil),
+              image: attr_get(attributes, "image", nil)
             } | list]
         _ -> list
       end
