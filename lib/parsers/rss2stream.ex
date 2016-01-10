@@ -215,7 +215,7 @@ defmodule Feedme.Parsers.RSS2Stream do
         {:xmlel, "web_master", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | web_master: pcdata(content)} }
 
         {:xmlel, "skipHours", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | skip_hours: (content |> map_element("hour") |> map_to_integer ) } }
-        {:xmlel, "skipDays", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | skip_days: (content |> map_element("day") |> map_to_integer ) } }
+        {:xmlel, "skipDays", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | skip_days: (content |> map_element("day") ) } }
 
         {:xmlel, "image", _attr, content} -> %Feed{feed | meta: %MetaData{ feed.meta | image: (content |> image_element) } }
         

@@ -30,7 +30,7 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
       link: "http://www.w3schools.com",
       description: "Free web building tutorials",
       skip_hours: [1,2],
-      skip_days: [1,2],
+      skip_days: ["Monday","Tuesday"],
       image: %Feedme.Image{
         title: "Test Image",
         description: "test image...",
@@ -312,7 +312,7 @@ defmodule Feedme.Test.Parsers.RSS2Stream do
         description: "Free web building tutorials",
         link: "http://www.w3schools.com", 
         title: "W3Schools Home Page",
-        skip_days: [1,2],
+        skip_days: ["Monday", "Tuesday"],
         skip_hours: [1,2],
         image: %Feedme.Image{
           title: "Test Image",
