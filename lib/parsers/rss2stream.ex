@@ -86,8 +86,8 @@ defmodule Feedme.Parsers.RSS2Stream do
         {:xmlel, "description", _attr, content} -> %Image{image | description: pcdata(content)}
         {:xmlel, "url", _attr, content} -> %Image{image | url: pcdata(content)}
         {:xmlel, "link", _attr, content} -> %Image{image | link: pcdata(content)}
-        {:xmlel, "width", _attr, content} -> %Image{image | width: (pcdata(content) |> String.to_integer)}
-        {:xmlel, "height", _attr, content} -> %Image{image | height: (pcdata(content) |> String.to_integer)}
+        {:xmlel, "width", _attr, content} -> %Image{image | width: pcdata(content)}
+        {:xmlel, "height", _attr, content} -> %Image{image | height: pcdata(content)}
         _ -> image
       end
     end
